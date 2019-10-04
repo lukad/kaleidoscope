@@ -1,0 +1,56 @@
+WHITESPACE = _{ " " }
+COMMENT = _{ "#" ~ (!"\n" ~ ANY)* }
+
+number = @{
+    "-"?
+    ~ ("0" | ASCII_NONZERO_DIGIT ~ ASCII_DIGIT*)
+    ~ ("." ~ ASCII_DIGIT*)?
+    ~ (^"e" ~ ("+" | "-")? ~ ASCII_DIGIT+)?
+}
+
+keyword = _{ "def" | "extern" }
+
+identifier = @{
+    !keyword
+    ~ (
+        (ASCII_ALPHA) ~ (ASCII_ALPHANUMERIC | "_")*
+        | "_" ~ (ASCII_ALPHANUMERIC | "_")+
+    )
+}
+
+prototype_args = _{
+    "(" ~ NEWLINE* ~ ")"
+       | "(" ~ NEWLINE* ~ identifier ~ NEWLINE* ~ ("," ~ NEWLINE* ~ identifier)* ~ NEWLINE* ~ ")"
+}
+
+prototype = {
+    identifier
+    ~ prototype_args
+}
+
+external = {
+    "extern "
+    ~ prototype
+}
+
+function = {
+    "def "
+    ~ prototype
+    ~ expr
+}
+
+call = {
+    identifier
+    ~ (
+        "(" ~ ")"
+        | "(" ~ NEWLINE* ~ expr ~ NEWLINE* ~ ("," ~ NEWLINE* ~ expr)* ~ NEWLINE* ~ ")"
+    )
+}
+
+expr = { number | call | identifier }
+
+stmt = _{ expr | external | function }
+
+terminator = _{ NEWLINE | ";"}
+
+program = { SOI ~ terminator* ~ (stmt ~ terminator+)* ~ stmt? ~ EOI }
